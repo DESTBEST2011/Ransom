@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RANSOM.EXE - System Error</title>
+<link rel="icon" href="assets/icon.ico">
+<style>
+  :root {
+    --xp-red-dark: #7a0000;
+    --xp-red-light: #e63e2f;
+    --xp-border: #550000;
+    --text: #000;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Классический фон Windows XP, но с красным оттенком */
+    background: radial-gradient(circle at 50% 50%, #ffcccc 0%, #cc0000 60%, #330000 100%);
+    font-family: Tahoma, "Segoe UI", Arial, sans-serif; /* Спокойный системный шрифт */
+    overflow: hidden;
+  }
+
+  /* ================= ОСНОВНОЕ ОКНО (Windows XP Style) ================= */
+  .xp-window {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    margin: 20px;
+    background: #ece9d8;
+    border: 3px solid var(--xp-border);
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 50px rgba(255,0,0,0.3);
+    z-index: 10;
+  }
+
+  /* Заголовок окна */
+  .title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 30px;
+    padding: 0 6px;
+    background: linear-gradient(180deg, #e63e2f 0%, #8b0000 100%);
+    border-radius: 5px 5px 0 0;
+    border-bottom: 1px solid var(--xp-border);
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.8);
+  }
+  .title-text { display: flex; align-items: center; gap: 6px; margin-left: 4px; }
+  .title-text img { width: 16px; height: 16px; }
+  
+  .window-controls { display: flex; gap: 3px; }
+  .win-btn {
+    width: 21px; height: 21px;
+    border-radius: 3px;
+    border: 1px solid #fff;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.8);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .win-btn.close {
+    background: linear-gradient(180deg, #ff8c8c, #d61c1c);
+  }
+  .win-btn.close::before { content: "✕"; color: white; font-size: 12px; font-weight: bold; }
+  .win-btn.min { background: linear-gradient(180deg, #e6e6e6, #999); }
+  .win-btn.min::before { content: "—"; color: #333; font-size: 10px; font-weight: bold; }
+
+  /* Тело окна */
+  .window-body {
+    position: relative;
+    background: #fff;
+    padding: 25px;
+    border: 1px solid #a0a0a0;
+    border-top: none;
+    color: var(--text);
+  }
+
+  /* Твоя рамка на фоне */
+  .ransom-frame {
+    position: absolute;
+    inset: 0;
+    background: url("assets/main_window.png") center / 100% 100% no-repeat;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .content-layer { position: relative; z-index: 1; }
+
+  /* Шапка */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 15px;
+  }
+  .monster {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
+  .title-h1 {
+    font-size: 32px;
+    font-weight: bold;
+    color: #cc0000;
+    margin: 0;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #666;
+    font-weight: bold;
+    margin-top: 4px;
+  }
+
+  /* Предупреждение */
+  .warn-box {
+    background: #fff0f0;
+    border: 1px solid #cc0000;
+    padding: 12px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #000;
+  }
+  .warn-box b { color: #cc0000; }
+  .warn-box code {
+    background: #eee;
+    padding: 1px 4px;
+    border: 1px solid #ccc;
+    font-family: "Courier New", monospace;
+    color: #000;
+  }
+
+  /* Кнопка скачивания (Windows XP style) */
+  .download-area {
+    text-align: center;
+    padding: 15px 0;
+  }
+  .btn-xp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #000;
+    text-decoration: none;
+    background: #ece9d8;
+    border: 2px solid #003399;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 #a0a0a0, 1px 1px 2px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .btn-xp:hover { background: #f0f0e8; }
+  .btn-xp:active {
+    box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);
+    transform: translateY(1px);
+  }
+  .btn-xp img { width: 20px; height: 20px; }
+
+  /* Футер */
+  .footer {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 11px;
+    color: #666;
+  }
+  .footer a { color: #003399; }
+
+  /* ================= ВСПЛЫВАЮЩИЕ ОКНА (POPUPS) ================= */
+  .popup-window {
+    position: fixed;
+    width: 450px;
+    height: 370px;
+    background: #ece9d8;
+    border: 2px solid #a0a0a0;
+    border-radius: 4px;
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    /* Плавное появление */
+    animation: popIn 0.3s ease-out;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .popup-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #003399;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 2px 2px 0 0;
+  }
+  .popup-title.red-bar { background: #8b0000; }
+  
+  .popup-close {
+    width: 16px; height: 14px;
+    background: linear-gradient(180deg, #ff8c8c, #d61c1c);
+    border: 1px solid #fff;
+    border-radius: 2px;
+    color: white;
+    font-size: 10px;
+    line-height: 12px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .popup-body {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #a0a0a0;
+    border-top: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 3px;
+    border-radius: 0 0 3px 3px;
+  }
+  
+  /* Картинка попапа заполняет все тело */
+  .popup-body img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Сохраняем пропорции картинки */
+  }
+
+  /* Скрытие */
+  .popup-window.hidden {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- Основное окно -->
+<main class="xp-window">
+  <header class="title-bar">
+    <div class="title-text">
+      <img src="assets/icon.ico" alt="" onerror="this.style.display='none'">
+      RANSOM.EXE
+    </div>
+    <div class="window-controls">
+      <div class="win-btn min"></div>
+      <div class="win-btn close"></div>
+    </div>
+  </header>
+
+  <div class="window-body">
+    <div class="ransom-frame"></div>
+
+    <div class="content-layer">
+      <div class="header">
+        <img class="monster" id="monsterImg" src="assets/monster.png" alt="Monster">
+        <div>
+          <h1 class="title-h1">RANSOM</h1>
+          <div class="subtitle">SYSTEM INFECTION PROTOCOL</div>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        <p style="margin-bottom: 8px;"><b>⚠ WARNING:</b> Thi5 1s a pr4nk gam3. It do3s n0t 3ncrypt 0r ste4l f1l3s.</p>
+        <p>1f you l0se, the sy5t3m w1ll ex3cut3 N0TH1NG. Unsaved data will be l0st.</p>
+        <p style="margin-top: 8px;">To exit: <b>???</b> or hold <b>???</b> for 3 seconds.</p>
+      </div>
+
+      <div class="download-area">
+        <a id="dl" class="btn-xp" href="#" download>
+          <img src="assets/coin.png" alt="Coin">
+          <span>Download Ransom.zip</span>
+        </a>
+      </div>
+
+      <div class="footer">
+        <a id="direct" href="#" target="_blank" rel="noopener">Direct Link</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Всплывающие окна (Popups) -->
+<!-- Popup 1 -->
+<div class="popup-window hidden" id="popup1" style="top: 10%; left: 10%;">
+  <div class="popup-title red-bar">
+    <span>SYSTEM ERROR</span>
+    <div class="popup-close">✕</div>
+  </div>
+  <div class="popup-body">
+    <img src="assets/popup1.png" alt="Popup 1" onerror="this.style.display='none'">
+  </div>
+</div>
+
+<!-- Popup 2 -->
+<div class="popup-window hidden" id="popup2" style="top: 50%; left: 5%;">
+  <div class="popup-title">
+    <span>WARNING</span>
+    <div class="popup-close">✕</div>
+  </div>
+  <div class="popup-body">
+    <img src="assets/popup2.png" alt="Popup 2" onerror="this.style.display='none'">
+  </div>
+</div>
+
+<!-- Popup 3 -->
+<div class="popup-window hidden" id="popup3" style="top: 20%; left: 60%;">
+  <div class="popup-title red-bar">
+    <span>CRITICAL ALERT</span>
+    <div class="popup-close">✕</div>
+  </div>
+  <div class="popup-body">
+    <img src="assets/popup3.png" alt="Popup 3" onerror="this.style.display='none'">
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // Вставь сюда свою ссылку на архив
+  const DOWNLOAD_URL = "https://github.com/DESTBEST2011/Ransom/releases/download/0.5/Ransom.zip";
+
+  const dl = document.getElementById("dl");
+  const direct = document.getElementById("direct");
+  const monster = document.getElementById("monsterImg");
+
+  if (DOWNLOAD_URL && !DOWNLOAD_URL.includes("ЗАМЕНИ")) {
+    dl.href = DOWNLOAD_URL;
+    direct.href = DOWNLOAD_URL;
+  }
+
+  // Фоллбэк для монстра
+  monster.addEventListener("error", () => {
+    if (!monster.dataset.fallback) {
+      monster.dataset.fallback = "1";
+      monster.src = "assets/ransom.png";
+    } else {
+      monster.style.display = "none";
+    }
+  });
+
+  // ================= ЛОГИКА ПОПАПОВ =================
+  // Находим элементы окна и кнопки, чтобы не перекрывать их
+  const dlRect = dl.getBoundingClientRect();
+  const safeZone = {
+    left: dlRect.left - 100,
+    right: dlRect.right + 100,
+    top: dlRect.top - 100,
+    bottom: dlRect.bottom + 100
+  };
+
+  function getRandomPosition(popupW, popupH) {
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    
+    let x, y, isOverlapping = true;
+    let attempts = 0;
+
+    while (isOverlapping && attempts < 50) {
+      // Отступы по 20px от краев экрана
+      x = 20 + Math.random() * (screenW - popupW - 40);
+      y = 20 + Math.random() * (screenH - popupH - 40);
+      
+      // Проверка, чтобы не перекрывать зону кнопки скачивания
+      if (x + popupW < safeZone.left || x > safeZone.right || 
+          y + popupH < safeZone.top || y > safeZone.bottom) {
+        isOverlapping = false;
+      }
+      attempts++;
+    }
+    return { x, y };
+  }
+
+  const popups = [
+    document.getElementById("popup1"),
+    document.getElementById("popup2"),
+    document.getElementById("popup3")
+  ];
+
+  // Кнопки закрытия
+  document.querySelectorAll(".popup-close").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.target.closest(".popup-window").classList.add("hidden");
+    });
+  });
+
+  // Движение и появление
+  function animatePopups() {
+    popups.forEach((popup, index) => {
+      // Случайный шанс появления (чтобы не все сразу)
+      if (Math.random() > 0.3 || popup.classList.contains("hidden")) {
+        
+        // Если окно скрыто, показываем его в новом месте
+        if (popup.classList.contains("hidden")) {
+          // Небольшая задержка для каждого окна
+          setTimeout(() => {
+            const pos = getRandomPosition(450, 370);
+            popup.style.left = pos.x + "px";
+            popup.style.top = pos.y + "px";
+            popup.classList.remove("hidden");
+          }, index * 500); 
+        } else {
+          // Если окно видно, иногда двигаем его
+          const pos = getRandomPosition(450, 370);
+          popup.style.transition = "left 0.8s ease, top 0.8s ease";
+          popup.style.left = pos.x + "px";
+          popup.style.top = pos.y + "px";
+        }
+      }
+    });
+  }
+
+  // Запускаем анимацию появления/движения каждые 4 секунды
+  setInterval(animatePopups, 4000);
+  
+  // Первый запуск через 1.5 секунды
+  setTimeout(animatePopups, 1500);
+
+})();
+</script>
+</body>
+</html>
