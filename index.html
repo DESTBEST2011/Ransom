@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RANSOM — скачать</title>
+<link rel="icon" href="assets/icon.ico">
+<style>
+  :root {
+    color-scheme: dark;
+    --red: #e63e2f;
+    --red-dark: #801912;
+    --gold: #f6d150;
+    --bg: #0a0000;
+    --card: #140303;
+    --text: #f3e9e7;
+    --muted: #b98c86;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: radial-gradient(circle at 50% 30%, #2a0505 0%, var(--bg) 70%);
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--text);
+    overflow-x: hidden;
+  }
+  #bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+
+  /* Рамка окна — main_window.png лежит ЗА содержимым, как в игре */
+  .frame-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    padding: 44px 44px 40px;
+  }
+  .frame-bg {
+    position: absolute;
+    inset: 0;
+    background: url("assets/main_window.png") center / 100% 100% no-repeat;
+    pointer-events: none;
+    z-index: 0;
+    filter: drop-shadow(0 20px 60px rgba(0,0,0,.6)) drop-shadow(0 0 40px rgba(200,20,10,.18));
+  }
+  /* если main_window.png нет — подстрахуемся красной рамкой */
+  .frame-wrap.no-frame .frame-bg {
+    background: linear-gradient(180deg, #b81c0e, #5a0a05);
+    border-radius: 18px;
+    border: 2px solid #5a0a05;
+  }
+
+  .card {
+    position: relative;
+    z-index: 1;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 34px 26px 24px;
+  }
+  .frame-wrap.no-frame .card { background: #1a0404; }
+
+  /* Шапка: монстр + заголовок */
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+  .monster {
+    flex: 0 0 auto;
+    width: 110px;
+    height: 110px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 14px rgba(230,62,47,.45));
+  }
+  .head-text { flex: 1 1 auto; }
+  h1 {
+    margin: 0 0 4px;
+    font-size: clamp(30px, 6vw, 46px);
+    letter-spacing: 7px;
+    color: var(--red);
+    text-shadow: 0 0 20px rgba(230,62,47,.55);
+    line-height: 1.05;
+  }
+  .sub {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  /* Блок предупреждения — как чёрная плашка с белой рамкой в игре */
+  .warn {
+    background: #000;
+    border: 2px solid #ffe8e5;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: #fff;
+    text-align: center;
+  }
+  .warn p { margin: 0 0 8px; }
+  .warn p:last-child { margin: 0; }
+  .warn .danger { color: var(--red); font-weight: 700; }
+  code {
+    background: rgba(255,255,255,.08);
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-family: Consolas, monospace;
+    font-size: .92em;
+    color: var(--gold);
+  }
+
+  /* Кнопка — золото/красный градиент как у счётчика и таймера */
+  .download { text-align: center; margin: 22px 0 16px; }
+  .btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    background: linear-gradient(180deg, #ff4d3d, #b81c0e);
+    color: #fff;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: .5px;
+    padding: 15px 38px;
+    border-radius: 10px;
+    border: 2px solid var(--gold);
+    box-shadow: 0 10px 26px rgba(200,30,15,.5), inset 0 1px 0 rgba(255,255,255,.25);
+    transition: transform .12s ease, box-shadow .12s ease, filter .12s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(200,30,15,.65), inset 0 1px 0 rgba(255,255,255,.3); filter: brightness(1.06); }
+  .btn:active { transform: translateY(0) scale(.98); }
+  .btn.loading { pointer-events: none; filter: brightness(.8); }
+  .coin-icon {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 6px rgba(246,209,80,.6));
+  }
+  .meta {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: #7a5450;
+    letter-spacing: .5px;
+  }
+  .meta a { color: var(--muted); }
+
+  /* Шаги */
+  .steps {
+    margin: 0;
+    padding: 14px 16px 14px 40px;
+    background: rgba(0,0,0,.55);
+    border: 1px solid #2a0a08;
+    border-radius: 10px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #e8d6d3;
+  }
+  .steps li { margin-bottom: 5px; }
+  .steps li:last-child { margin-bottom: 0; }
+
+  footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 11px;
+    color: #6b4a46;
+    letter-spacing: .5px;
+  }
+
+  /* Тост */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    transform: translate(-50%, 140%);
+    background: #1a0404;
+    border: 1px solid var(--red-dark);
+    color: #ffd7d2;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    transition: transform .25s ease;
+    z-index: 10;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.show { transform: translate(-50%, 0); }
+
+  /* Летающие монеты-декоры (используют assets/coin.png) */
+  .coin-fly {
+    position: fixed;
+    width: 24px;
+    height: 24px;
+    background: url("assets/coin.png") center / contain no-repeat;
+    opacity: .0;
+    pointer-events: none;
+    z-index: 0;
+    animation: coinFly linear forwards;
+  }
+  @keyframes coinFly {
+    0%   { opacity: 0;   transform: translateY(0) rotate(0deg) scale(.6); }
+    10%  { opacity: .5;  }
+    90%  { opacity: .35; }
+    100% { opacity: 0;   transform: translateY(-110vh) rotate(360deg) scale(1); }
+  }
+
+  @media (max-width: 560px) {
+    .frame-wrap { padding: 28px 24px 26px; }
+    .head { gap: 12px; }
+    .monster { width: 80px; height: 80px; }
+    h1 { letter-spacing: 4px; }
+    .btn { padding: 13px 24px; font-size: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<main class="frame-wrap" id="frameWrap">
+  <div class="frame-bg" aria-hidden="true"></div>
+  <section class="card">
+
+    <header class="head">
+      <img class="monster" id="monsterImg" src="assets/monster.png" alt="">
+      <div class="head-text">
+        <h1>RANSOM</h1>
+        <p class="sub">Игра-розыгрыш · скачать</p>
+      </div>
+    </header>
+
+    <section class="warn">
+      <p><b>⚠️ Это розыгрыш, а не вирус.</b> Игра имитирует шифровальщик,
+      но не шифрует, не удаляет и не ворует файлы.</p>
+      <p class="danger">Но! При проигрыше выполнится shutdown /s /t 0 /f —
+      ПК выключится, несохранённые данные в открытых программах пропадут.</p>
+      <p>Закрыть игру: <b>Ctrl+Alt+Q</b> или удерживать <b>Esc</b> 3 секунды.</p>
+    </section>
+
+    <div class="download">
+      <a id="dl" class="btn" href="#" download>
+        <img class="coin-icon" src="assets/coin.png" alt="">
+        <span>Скачать Ransom.zip</span>
+      </a>
+      <p class="meta">
+        Windows 10/11 x64 · архив с exe ·
+        <a id="direct" href="#" target="_blank" rel="noopener">прямая ссылка</a>
+      </p>
+    </div>
+
+    <ol class="steps">
+      <li>Скачай архив и распакуй его.</li>
+      <li>Запусти <code>Ransom.exe</code>.</li>
+      <li>Если Defender ругается — это ложное срабатывание
+          (слова «ransom» и «shutdown» внутри). Добавь файл в исключения.</li>
+    </ol>
+
+    <footer>Сделано как розыгрыш. Не является вредоносным ПО.</footer>
+  </section>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ==== ЗАМЕНИ ЭТУ СТРОКУ НА СВОЮ ССЫЛКУ ИЗ RELEASES ==== */
+  const DOWNLOAD_URL = "ЗАМЕНИ_НА_ССЫЛКУ_ИЗ_RELEASES";
+  /* ====================================================== */
+
+  const dl = document.getElementById("dl");
+  const direct = document.getElementById("direct");
+  const toastEl = document.getElementById("toast");
+  const wrap = document.getElementById("frameWrap");
+  const monster = document.getElementById("monsterImg");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Ссылки
+  if (DOWNLOAD_URL && !DOWNLOAD_URL.includes("ЗАМЕНИ")) {
+    dl.href = DOWNLOAD_URL;
+    direct.href = DOWNLOAD_URL;
+  }
+
+  // Если main_window.png не загрузился — показываем запасную рамку
+  const probe = new Image();
+  probe.onerror = () => wrap.classList.add("no-frame");
+  probe.src = "assets/main_window.png";
+
+  // Если monster.png нет — пробуем ransom.png
+  monster.addEventListener("error", () => {
+    if (!monster.dataset.fallback) {
+      monster.dataset.fallback = "1";
+      monster.src = "assets/ransom.png";
+    } else {
+      monster.style.display = "none";
+    }
+  }, { once: false });
+
+  // Тост
+  let toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 3500);
+  }
+
+  dl.addEventListener("click", (e) => {
+    if (dl.getAttribute("href") === "#" || dl.href.includes("ЗАМЕНИ")) {
+      e.preventDefault();
+      toast("Ссылка не настроена: впиши DOWNLOAD_URL в index.html");
+      return;
+    }
+    toast("Скачивание началось… Проверь папку «Загрузки».");
+    const span = dl.querySelector("span");
+    const original = span.textContent;
+    dl.classList.add("loading");
+    span.textContent = "Скачивание…";
+    setTimeout(() => {
+      dl.classList.remove("loading");
+      span.textContent = original;
+    }, 4000);
+  });
+
+  // ---------- Фон: частицы + летающие монеты ----------
+  const canvas = document.getElementById("bg");
+  const ctx = canvas.getContext("2d", { alpha: true });
+  let particles = [], W = 0, H = 0, dpr = 1;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const count = Math.min(60, Math.floor((W * H) / 25000));
+    particles = Array.from({ length: count }, () => spawn(true));
+  }
+  function spawn(anywhere) {
+    return {
+      x: Math.random() * W,
+      y: anywhere ? Math.random() * H : H + 10,
+      r: 0.6 + Math.random() * 2.2,
+      vy: -(0.15 + Math.random() * 0.5),
+      vx: (Math.random() - 0.5) * 0.15,
+      a: 0.15 + Math.random() * 0.35,
+      hue: Math.random() < 0.85 ? 0 : 350
+    };
+  }
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.y < -10 || p.x < -10 || p.x > W + 10) Object.assign(p, spawn(false));
+      ctx.beginPath();
+      ctx.fillStyle = `hsla(${p.hue}, 90%, 55%, ${p.a})`;
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // Летающая монета (использует assets/coin.png)
+  function flyCoin() {
+    const el = document.createElement("div");
+    el.className = "coin-fly";
+    el.style.left = (5 + Math.random() * 90) + "vw";
+    el.style.top = "100vh";
+    el.style.animationDuration = (7 + Math.random() * 6) + "s";
+    el.style.width = el.style.height = (18 + Math.random() * 18) + "px";
+    document.body.appendChild(el);
+    el.addEventListener("animationend", () => el.remove());
+  }
+
+  if (!reduceMotion) {
+    resize();
+    window.addEventListener("resize", resize, { passive: true });
+    requestAnimationFrame(frame);
+    setInterval(flyCoin, 1600);
+    setTimeout(flyCoin, 400);
+  }
+
+  // Проверка ссылки при загрузке (не критично, при ошибке молчим)
+  if (DOWNLOAD_URL && !DOWNLOAD_URL.includes("ЗАМЕНИ")) {
+    window.addEventListener("load", async () => {
+      try {
+        const res = await fetch(DOWNLOAD_URL, { method: "HEAD", cache: "no-store" });
+        if (!res.ok) toast("Файл не найден по ссылке. Проверь релиз.");
+      } catch { /* CORS на github.com — игнорируем */ }
+    });
+  }
+})();
+</script>
+</body>
+</html>
